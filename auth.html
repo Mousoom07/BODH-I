@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BODH-I · Authentication</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#00020a;--bg1:#060d1f;--bg2:#080f20;
+  --cyan:#06B6D4;--cyan2:#0891b2;--purple:#8B5CF6;--green:#10B981;
+  --red:#F43F5E;--amber:#F59E0B;--white:#e2e8f0;--mid:#94a3b8;--dim:#475569;
+  --glass:rgba(8,18,40,0.65);--border:rgba(6,182,212,0.13);
+  --font:"DM Sans",system-ui,sans-serif;
+  --mono:"JetBrains Mono",monospace;
+  --disp:"Syne",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:var(--font);
+  overflow-x:hidden;
+  min-height:100vh;
+}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:4px}
+::-webkit-scrollbar-thumb{background:rgba(6,182,212,.5);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+* { scrollbar-width:thin; scrollbar-color:rgba(6,182,212,.5) rgba(255,255,255,.04) }
+
+/* ══════════════════════════════════════════════
+   3D ANIMATED BACKGROUND
+   ══════════════════════════════════════════════ */
+#bgCanvas{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+}
+.bg-gradient{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(6,182,212,.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(139,92,246,.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(16,185,129,.05) 0%, transparent 60%);
+  pointer-events:none;
+}
+
+/* Floating geometric shapes */
+.float-shape{
+  position:fixed;
+  border-radius:50%;
+  opacity:.08;
+  pointer-events:none;
+  z-index:0;
+  filter:blur(1px);
+}
+.shape-1{
+  width:300px;height:300px;
+  background:linear-gradient(135deg,var(--cyan),transparent);
+  top:10%;left:5%;
+  animation:float1 20s ease-in-out infinite;
+}
+.shape-2{
+  width:200px;height:200px;
+  background:linear-gradient(135deg,var(--purple),transparent);
+  top:60%;right:10%;
+  animation:float2 25s ease-in-out infinite;
+}
+.shape-3{
+  width:150px;height:150px;
+  background:linear-gradient(135deg,var(--green),transparent);
+  bottom:15%;left:30%;
+  animation:float3 18s ease-in-out infinite;
+}
+.shape-4{
+  width:80px;height:80px;
+  border:2px solid rgba(6,182,212,.15);
+  background:none;
+  top:30%;right:25%;
+  border-radius:12px;
+  transform:rotate(45deg);
+  animation:float4 22s ease-in-out infinite;
+}
+.shape-5{
+  width:120px;height:120px;
+  border:2px solid rgba(139,92,246,.12);
+  background:none;
+  bottom:40%;left:8%;
+  border-radius:50%;
+  animation:float1 28s ease-in-out infinite reverse;
+}
+
+@keyframes float1{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-40px) rotate(10deg)}
+}
+@keyframes float2{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(30px) rotate(-8deg)}
+}
+@keyframes float3{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(-25px) rotate(5deg)}
+}
+@keyframes float4{
+  0%,100%{transform:translateY(0) rotate(45deg)}
+  50%{transform:translateY(20px) rotate(55deg)}
+}
+
+/* ══════════════════════════════════════════════
+   MAIN LAYOUT
+   ══════════════════════════════════════════════ */
+.auth-page{
+  position:relative;
+  z-index:1;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+}
+
+.auth-topbar{
+  width:100%;
+  max-width:680px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:24px;
+  position:relative;
+  z-index:2;
+}
+.auth-logo{
+  font-family:var(--disp);
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:.18em;
+  background:linear-gradient(135deg,var(--cyan),var(--white),var(--purple));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  cursor:pointer;
+  text-decoration:none;
+}
+.auth-back{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--mid);
+  text-decoration:none;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.04em;
+  transition:color .2s;
+  cursor:pointer;
+  background:none;
+  border:none;
+  font-family:var(--font);
+}
+.auth-back:hover{color:var(--cyan)}
+
+/* ══════════════════════════════════════════════
+   3D CARD CONTAINER
+   ══════════════════════════════════════════════ */
+.auth-scene{
+  perspective:1400px;
+  width:100%;
+  max-width:680px;
+  position:relative;
+  z-index:2;
+}
+
+.auth-card-wrap{
+  transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.34,1.56,.64,1);
+}
+
+.auth-card-3d{
+  position:relative;
+  background:linear-gradient(145deg, rgba(12,24,52,.85), rgba(6,14,36,.9));
+  border:1px solid rgba(6,182,212,.18);
+  border-radius:28px;
+  padding:40px 48px 32px;
+  backdrop-filter:blur(24px);
+  box-shadow:
+    0 0 0 1px rgba(6,182,212,.08),
+    0 25px 80px rgba(0,0,0,.5),
+    0 0 120px rgba(6,182,212,.06);
+  overflow-x:hidden;
+  transform:translateZ(0);
+  transition:all .5s ease;
+}
+.auth-card-3d:hover{
+  box-shadow:
+    0 0 0 1px rgba(6,182,212,.15),
+    0 30px 90px rgba(0,0,0,.55),
+    0 0 140px rgba(6,182,212,.1);
+}
+
+/* Card edge glow */
+.auth-card-3d::before{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:28px;
+  padding:1px;
+  background:linear-gradient(135deg, rgba(6,182,212,.4), rgba(139,92,246,.3), rgba(6,182,212,.1));
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+  opacity:.5;
+}
+
+/* Inner depth highlight */
+.auth-card-3d::after{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+  pointer-events:none;
+}
+
+/* 3D Input fields */
+.auth-input-3d{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  color:#e2e8f0;
+  font-family:var(--font);
+  font-size:14px;
+  transition:all .3s ease;
+  outline:none;
+  position:relative;
+}
+.auth-input-3d:focus{
+  border-color:rgba(6,182,212,.5);
+  background:rgba(6,182,212,.08);
+  box-shadow:0 0 20px rgba(6,182,212,.15), inset 0 1px 0 rgba(255,255,255,.05);
+  transform:translateZ(4px);
+}
+.auth-input-3d::placeholder{color:#94a3b8}
+.auth-input-3d option{background:#080f20;color:#e2e8f0}
+
+/* Buttons with 3D depth */
+.btn-3d-primary{
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  border:none;
+  border-radius:50px;
+  padding:16px 40px;
+  color:#fff;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  letter-spacing:.06em;
+  font-family:var(--font);
+  transition:all .3s;
+  box-shadow:0 4px 20px rgba(6,182,212,.3), 0 0 40px rgba(6,182,212,.15);
+  position:relative;
+  overflow:hidden;
+  width:100%;
+}
+.btn-3d-primary::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.2), transparent);
+  opacity:0;
+  transition:opacity .3s;
+}
+.btn-3d-primary:hover{
+  transform:translateY(-3px) translateZ(8px);
+  box-shadow:0 8px 30px rgba(6,182,212,.45), 0 0 60px rgba(6,182,212,.25);
+}
+.btn-3d-primary:hover::before{opacity:1}
+.btn-3d-primary:active{transform:translateY(1px) scale(.98)}
+
+.btn-3d-ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:50px;
+  padding:16px 32px;
+  color:var(--mid);
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  font-family:var(--font);
+  transition:all .25s;
+  letter-spacing:.04em;
+  width:100%;
+  position:relative;
+  overflow:hidden;
+}
+.btn-3d-ghost:hover{
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(6,182,212,.06);
+  transform:translateY(-2px);
+  box-shadow:0 4px 20px rgba(6,182,212,.1);
+}
+.btn-3d-ghost:active{transform:translateY(1px)}
+
+/* Progress bar 3D */
+.step-progress-3d{
+  height:4px;
+  background:rgba(255,255,255,.08);
+  border-radius:2px;
+  margin-bottom:24px;
+  overflow:hidden;
+  position:relative;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.3);
+}
+.step-progress-bar-3d{
+  height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  width:0%;
+  transition:width .5s cubic-bezier(.34,1.26,.64,1);
+  border-radius:2px;
+  box-shadow:0 0 10px rgba(6,182,212,.4);
+}
+
+/* Step dots with 3D glow */
+.step-indicator-3d{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:28px;
+  gap:4px;
+}
+.step-dot-3d{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.75rem;
+  color:var(--mid);
+  transition:all .4s cubic-bezier(.34,1.26,.64,1);
+  border:1px solid rgba(255,255,255,.1);
+  position:relative;
+}
+.step-dot-3d.active{
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  color:#fff;
+  font-weight:700;
+  border-color:transparent;
+  box-shadow:0 0 15px rgba(6,182,212,.4), 0 0 30px rgba(139,92,246,.2);
+  transform:translateZ(10px) scale(1.1);
+}
+.step-dot-3d::after{
+  content:'';
+  position:absolute;
+  bottom:-8px;
+  left:50%;
+  transform:translateX(-50%);
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:var(--cyan);
+  opacity:0;
+  transition:opacity .3s;
+  box-shadow:0 0 6px var(--cyan);
+}
+.step-dot-3d.active::after{opacity:1}
+
+/* Form styling */
+.form-group{margin-bottom:16px}
+.form-label{
+  display:block;
+  font-size:.85rem;
+  color:#94a3b8;
+  margin-bottom:6px;
+  font-weight:500;
+  font-family:var(--font);
+}
+.form-row{display:flex;gap:12px}
+
+/* Account type cards 3D */
+.account-type-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-top:8px;
+}
+.account-type-card{
+  padding:20px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.12);
+  cursor:pointer;
+  transition:all .35s cubic-bezier(.34,1.26,.64,1);
+  text-align:center;
+  position:relative;
+  transform-style:preserve-3d;
+}
+.account-type-card:hover{
+  border-color:rgba(6,182,212,.4);
+  background:rgba(6,182,212,.1);
+  transform:translateY(-6px) translateZ(20px);
+  box-shadow:0 15px 40px rgba(6,182,212,.15);
+}
+.account-type-card.selected{
+  border-color:var(--cyan);
+  background:rgba(6,182,212,.18);
+  transform:translateY(-4px) translateZ(15px);
+  box-shadow:0 10px 30px rgba(6,182,212,.2), 0 0 20px rgba(6,182,212,.1);
+}
+.account-type-icon{font-size:2.2rem;margin-bottom:12px;display:block}
+.account-type-title{font-weight:700;font-size:1rem;margin-bottom:6px;color:#e2e8f0}
+.account-type-desc{font-size:.8rem;color:#94a3b8;line-height:1.4}
+
+/* Step content animations */
+.step-content{
+  animation:stepEnter .45s cubic-bezier(.34,1.26,.64,1);
+}
+@keyframes stepEnter{
+  from{opacity:0;transform:translateX(30px) rotateY(-8deg)}
+  to{opacity:1;transform:translateX(0) rotateY(0)}
+}
+
+.step-exit{
+  animation:stepExit .35s cubic-bezier(.34,1.26,.64,1) forwards;
+}
+@keyframes stepExit{
+  from{opacity:1;transform:translateX(0)}
+  to{opacity:0;transform:translateX(-30px)}
+}
+
+/* Checkbox cards */
+.checkbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.checkbox-card{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  cursor:pointer;
+  transition:all .3s;
+}
+.checkbox-card:has(input:checked){
+  border-color:var(--cyan);
+  background:rgba(6,182,212,.1);
+}
+.checkbox-card input{width:18px;height:18px;accent-color:var(--cyan)}
+.checkbox-label{font-size:.85rem}
+
+/* Skip option */
+.skip-option{
+  display:inline-block;
+  margin-top:15px;
+  color:var(--cyan);
+  cursor:pointer;
+  font-size:.85rem;
+  transition:opacity .3s;
+}
+.skip-option:hover{opacity:.7}
+
+/* File upload */
+.file-upload-icon{font-size:2rem;margin-bottom:8px}
+.file-upload-text{font-weight:500}
+.file-upload-hint{font-size:.75rem;color:var(--mid);margin-top:4px}
+
+/* Profile photo */
+.profile-photo-area{
+  width:150px;height:150px;
+  border-radius:50%;
+  margin:0 auto 20px;
+  overflow:hidden;
+  cursor:pointer;
+  border:2px dashed rgba(255,255,255,.15);
+  transition:all .3s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.profile-photo-area:hover{border-color:var(--cyan)}
+.profile-photo-preview{width:100%;height:100%}
+.profile-photo-placeholder{text-align:center;color:var(--mid)}
+
+/* Signature */
+.signature-area{
+  height:150px;
+  border-radius:16px;
+  border:2px dashed rgba(255,255,255,.15);
+  text-align:center;
+  cursor:pointer;
+  transition:all .3s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.signature-area:hover{border-color:var(--cyan)}
+.signature-preview{width:100%;height:100%;padding:10px}
+.signature-placeholder{text-align:center;color:var(--mid)}
+
+/* Consent cards */
+.consent-card{
+  display:flex;
+  gap:12px;
+  padding:15px;
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  margin-bottom:12px;
+  transition:all .3s;
+}
+.consent-card:hover{
+  border-color:rgba(6,182,212,.2);
+  background:rgba(255,255,255,.06);
+}
+.consent-check{
+  width:24px;
+  height:24px;
+  min-width:24px;
+  border-radius:6px;
+  border:2px solid rgba(255,255,255,.2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .3s;
+}
+.consent-check input{display:none}
+.consent-check:has(input:checked){
+  background:var(--cyan);
+  border-color:var(--cyan);
+  box-shadow:0 0 10px rgba(6,182,212,.3);
+}
+.check-mark{color:var(--bg);font-weight:bold;display:none}
+.consent-check:has(input:checked) .check-mark{display:block}
+.consent-title{font-weight:600;margin-bottom:4px}
+.consent-text{font-size:.8rem;color:var(--mid);line-height:1.5}
+
+/* Success checklist */
+.bodhi-id-display{
+  padding:20px;
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(6,182,212,.15),rgba(139,92,246,.15));
+  border:1px solid var(--cyan);
+  margin-bottom:20px;
+  position:relative;
+  overflow:hidden;
+}
+.bodhi-id-display::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(6,182,212,.15), transparent 70%);
+  pointer-events:none;
+}
+.success-checklist{display:flex;flex-direction:column;gap:10px}
+.success-item{display:flex;align-items:center;gap:10px;color:var(--mid)}
+.success-icon{
+  width:24px;height:24px;
+  border-radius:50%;
+  background:var(--green);
+  color:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.75rem;
+  font-weight:bold;
+}
+
+/* Post login */
+.post-login-card{
+  padding:15px;
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+  margin-bottom:15px;
+  border:1px solid rgba(255,255,255,.08);
+  transition:all .3s;
+}
+.post-login-card:hover{
+  border-color:rgba(6,182,212,.15);
+  background:rgba(255,255,255,.07);
+}
+
+/* Step nav */
+.step-nav{
+  display:flex;
+  gap:12px;
+  margin-top:24px;
+}
+
+.step-nav #prevBtn{
+  flex:0 0 auto;
+}
+
+.step-nav #nextBtn{
+  flex:1;
+}
+
+/* 3D Divider */
+.divider-3d{
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  margin:20px 0;
+  position:relative;
+}
+.divider-3d::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:6px;height:6px;
+  border-radius:50%;
+  background:rgba(6,182,212,.5);
+  box-shadow:0 0 8px var(--cyan);
+}
+
+/* Link styling */
+.auth-link{
+  color:var(--cyan);
+  text-decoration:none;
+  font-size:.85rem;
+  transition:opacity .2s;
+  cursor:pointer;
+  background:none;
+  border:none;
+  font-family:var(--font);
+}
+.auth-link:hover{opacity:.7;text-decoration:underline}
+
+/* Landing hero */
+.landing-hero{
+  text-align:center;
+  padding:10px 0 20px;
+}
+.landing-hero h2{
+  font-family:var(--disp);
+  font-size:2.2rem;
+  font-weight:900;
+  margin-bottom:12px;
+  background:linear-gradient(135deg,var(--cyan),var(--white),var(--purple));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  letter-spacing:.02em;
+}
+.landing-hero p{
+  color:var(--mid);
+  margin:0 0 32px;
+  font-size:1rem;
+  line-height:1.6;
+}
+
+/* Range slider */
+.range-slider{
+  -webkit-appearance:none;
+  appearance:none;
+  height:8px;
+  background:rgba(255,255,255,.1);
+  border-radius:4px;
+  outline:none;
+  margin:10px 0;
+  width:100%;
+}
+.range-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:20px;height:20px;
+  background:var(--cyan);
+  border-radius:50%;
+  cursor:pointer;
+  box-shadow:0 0 10px rgba(6,182,212,.4);
+}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulseGlow{
+  0%,100%{box-shadow:0 0 20px rgba(6,182,212,.2)}
+  50%{box-shadow:0 0 40px rgba(6,182,212,.4)}
+}
+@keyframes shimmer{
+  0%{background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+
+/* Responsive */
+@media(max-width:680px){
+  .auth-card-3d{padding:28px 20px 24px;border-radius:20px}
+  .account-type-grid{grid-template-columns:1fr}
+  .form-row{flex-direction:column;gap:0}
+  .auth-topbar{max-width:100%}
+  .landing-hero h2{font-size:1.7rem}
+  .step-indicator-3d{gap:2px}
+  .step-dot-3d{width:26px;height:26px;font-size:.65rem}
+}
+@media(max-width:400px){
+  .auth-page{padding:20px 12px}
+  .auth-card-3d{padding:22px 16px 20px}
+  .landing-hero h2{font-size:1.4rem}
+}
+
+/* Scrollbar for card */
+.auth-card-3d::-webkit-scrollbar{width:6px}
+.auth-card-3d::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:3px}
+.auth-card-3d::-webkit-scrollbar-thumb{background:rgba(6,182,212,.4);border-radius:3px}
+
+/* ══════════════════════════════════════════════
+   ALIASES FOR ORIGINAL CLASS NAMES
+   ══════════════════════════════════════════════ */
+.auth-input{
+  width:100%;
+  padding:14px 16px;
+  margin-bottom:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  color:#e2e8f0;
+  font-family:var(--font);
+  font-size:14px;
+  transition:all .3s ease;
+  outline:none;
+  position:relative;
+}
+.auth-input:focus{
+  border-color:rgba(6,182,212,.5);
+  background:rgba(6,182,212,.08);
+  box-shadow:0 0 20px rgba(6,182,212,.15), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.auth-input::placeholder{color:#94a3b8}
+.auth-input option{background:#080f20;color:#e2e8f0}
+
+.btn-primary{
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  border:none;
+  border-radius:50px;
+  padding:16px 40px;
+  color:#fff;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  letter-spacing:.06em;
+  font-family:var(--font);
+  transition:all .3s;
+  box-shadow:0 4px 20px rgba(6,182,212,.3), 0 0 40px rgba(6,182,212,.15);
+  position:relative;
+  overflow:hidden;
+  width:100%;
+}
+.btn-primary::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.2), transparent);
+  opacity:0;
+  transition:opacity .3s;
+}
+.btn-primary:hover{
+  transform:translateY(-3px);
+  box-shadow:0 8px 30px rgba(6,182,212,.45), 0 0 60px rgba(6,182,212,.25);
+}
+.btn-primary:hover::before{opacity:1}
+.btn-primary:active{transform:translateY(1px) scale(.98)}
+
+.btn-ghost{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:50px;
+  padding:16px 32px;
+  color:var(--mid);
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  font-family:var(--font);
+  transition:all .25s;
+  letter-spacing:.04em;
+  width:100%;
+  position:relative;
+  overflow:hidden;
+}
+.btn-ghost:hover{
+  border-color:var(--cyan);
+  color:var(--cyan);
+  background:rgba(6,182,212,.06);
+  transform:translateY(-2px);
+  box-shadow:0 4px 20px rgba(6,182,212,.1);
+}
+.btn-ghost:active{transform:translateY(1px)}
+
+.step-progress{
+  height:4px;
+  background:rgba(255,255,255,.08);
+  border-radius:2px;
+  margin-bottom:24px;
+  overflow:hidden;
+  position:relative;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.3);
+}
+.step-progress-bar{
+  height:100%;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  width:0%;
+  transition:width .5s cubic-bezier(.34,1.26,.64,1);
+  border-radius:2px;
+  box-shadow:0 0 10px rgba(6,182,212,.4);
+}
+
+.step-indicator{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:28px;
+  gap:4px;
+}
+.step-dot{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:rgba(255,255,255,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:.75rem;
+  color:var(--mid);
+  transition:all .4s cubic-bezier(.34,1.26,.64,1);
+  border:1px solid rgba(255,255,255,.1);
+  position:relative;
+}
+.step-dot.active{
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  color:#fff;
+  font-weight:700;
+  border-color:transparent;
+  box-shadow:0 0 15px rgba(6,182,212,.4), 0 0 30px rgba(139,92,246,.2);
+  transform:scale(1.1);
+}
+.step-dot::after{
+  content:'';
+  position:absolute;
+  bottom:-8px;
+  left:50%;
+  transform:translateX(-50%);
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:var(--cyan);
+  opacity:0;
+  transition:opacity .3s;
+  box-shadow:0 0 6px var(--cyan);
+}
+.step-dot.active::after{opacity:1}
+
+.auth-card{
+  position:relative;
+  background:transparent;
+  border:none;
+  border-radius:0;
+  padding:0;
+  backdrop-filter:none;
+  box-shadow:none;
+}
+.auth-card::before,.auth-card::after{display:none}
+
+.multi-step-card{
+  max-height:none;
+  max-width:none;
+  overflow-y:visible;
+  position:relative;
+  overflow-x:hidden;
+  padding:0;
+  box-sizing:border-box;
+  border-radius:0;
+  background:transparent;
+  border:none;
+}
+.multi-step-card::-webkit-scrollbar{width:6px}
+.multi-step-card::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:4px}
+.multi-step-card::-webkit-scrollbar-thumb{background:rgba(6,182,212,.5);border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+.multi-step-card *{pointer-events:auto}
+
+.auth-close{display:none}
+.step-nav{
+  display:flex;
+  align-items:center;
+  gap:16px;
+}
+
+#prevBtn,
+#nextBtn{
+  height:64px !important;
+  border-radius:999px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+#prevBtn{
+  flex:0 0 180px !important;
+  width:180px !important;
+}
+
+#nextBtn{
+  flex:1 !important;
+}
+</style>
+</head>
+<body>
+
+<!-- 3D Background -->
+<div class="bg-gradient"></div>
+<canvas id="bgCanvas"></canvas>
+<div class="float-shape shape-1"></div>
+<div class="float-shape shape-2"></div>
+<div class="float-shape shape-3"></div>
+<div class="float-shape shape-4"></div>
+<div class="float-shape shape-5"></div>
+
+<div class="auth-page">
+
+  <div class="auth-topbar">
+    <a href="index.html" class="auth-logo">BODH-I</a>
+    <a href="index.html" class="auth-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      Back to Home
+    </a>
+  </div>
+
+  <div class="auth-scene">
+    <div class="auth-card-wrap">
+      <div class="auth-card-3d" id="authCard">
+
+        <!-- Progress Indicator -->
+        <div id="progressWrap" style="display:none">
+          <div class="step-progress-3d">
+            <div class="step-progress-bar-3d" id="progressBar"></div>
+          </div>
+          <div class="step-indicator-3d" id="stepIndicator">
+          <span class="step-dot-3d active" data-step="1">1</span>
+          <span class="step-dot-3d" data-step="2">2</span>
+          <span class="step-dot-3d" data-step="3">3</span>
+          <span class="step-dot-3d" data-step="4">4</span>
+          <span class="step-dot-3d" data-step="5">5</span>
+          <span class="step-dot-3d" data-step="6">6</span>
+          <span class="step-dot-3d" data-step="7">7</span>
+          <span class="step-dot-3d" data-step="8">8</span>
+          <span class="step-dot-3d" data-step="9">9</span>
+          <span class="step-dot-3d" data-step="10">10</span>
+          <span class="step-dot-3d" data-step="11">11</span>
+        </div>
+        </div>
+
+    <!-- Landing View with Login/Signup -->
+    <div id="landingView" style="display:block">
+      <div style="text-align:center;padding:20px 0">
+        <h2 style="font-family:var(--disp);font-size:1.8rem;margin-bottom:10px">Welcome to BODH-I</h2>
+        <p style="color:var(--mid);margin:0 0 30px;font-size:0.95rem">Your AI-Powered Mental Wellness Platform</p>
+
+        <div style="display:flex;flex-direction:column;gap:15px">
+          <button class="btn-primary" style="width:100%;padding:16px" onclick="showAuthTab('login')">
+            Login to Account →
+          </button>
+          <button class="btn-ghost" style="width:100%;padding:16px;cursor:pointer" onclick="showAuthTab('signup')">
+            Create New Account →
+          </button>
+        </div>
+
+        <p style="text-align:center;margin-top:25px;color:var(--mid);font-size:0.8rem">
+          Already have an account? Login above<br>
+          New user? Create account to get started
+        </p>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <div id="loginForm" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Welcome Back</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Sign in to continue</p>
+
+      <div class="form-group">
+        <label class="form-label">BODH-I ID *</label>
+        <input class="auth-input" placeholder="BODHI-2026-XXXXXX" id="loginBodhiId">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email or Username *</label>
+        <input class="auth-input" placeholder="email@example.com" id="loginEmail">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password *</label>
+        <input class="auth-input" type="password" placeholder="Enter your password" id="loginPassword">
+      </div>
+
+      <button class="btn-primary" style="width:100%;margin-top:10px" onclick="handleLogin()">
+        <span>Access Portal</span>
+        <span style="margin-left:8px">→</span>
+      </button>
+
+      <p style="text-align:center;margin-top:15px;color:var(--mid);font-size:0.85rem">
+        <button class="auth-link" onclick="showLanding()">← Back</button>
+      </p>
+      <p style="text-align:center;margin-top:10px;color:var(--mid);font-size:0.85rem">
+        New user? <button class="auth-link" onclick="showLanding()">Create an account</button>
+      </p>
+    </div>
+
+    <!-- Step 1: Account Type -->
+    <div id="step1" class="step-content" style="display:none">
+      <p style="text-align:left;margin-bottom:5px"><a href="index.html" style="color:var(--cyan);text-decoration:none;font-size:0.85rem">← Back to Home</a></p>
+      <p style="text-align:right;margin-bottom:5px;margin-top:-20px"><button class="auth-link" onclick="showAuthTab('login')">Already have an account? Login →</button></p>
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Create Account</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Select your account type to get started</p>
+
+      <div class="account-type-grid">
+        <div class="account-type-card" onclick="selectAccountType('patient',event)">
+          <div class="account-type-icon">🧠</div>
+          <div class="account-type-title">Patient</div>
+          <div class="account-type-desc">Seeking mental wellness assessments & AI-powered care</div>
+        </div>
+
+        <div class="account-type-card" onclick="selectAccountType('research',event)">
+          <div class="account-type-icon">🔬</div>
+          <div class="account-type-title">Research Participant</div>
+          <div class="account-type-desc">Contributing to mental health research studies</div>
+        </div>
+
+        <div class="account-type-card" onclick="selectAccountType('professional',event)">
+          <div class="account-type-icon">👨‍⚕️</div>
+          <div class="account-type-title">Healthcare Professional</div>
+          <div class="account-type-desc">Clinician, therapist, or medical researcher</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Basic Information -->
+    <div id="step2" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Basic Information</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Tell us about yourself</p>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Full Name *</label>
+          <input class="auth-input" placeholder="Enter your full name" id="basicName">
+        </div>
+        <div class="form-group" style="width:120px">
+          <label class="form-label">Age</label>
+          <input class="auth-input" placeholder="Years" id="basicAge">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Date of Birth</label>
+          <input class="auth-input" type="date" id="basicDob">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Gender</label>
+          <select class="auth-input" id="basicGender" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+            <option value="prefer_not">Prefer not to say</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Marital Status</label>
+          <select class="auth-input" id="basicMarital" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select status</option>
+            <option value="single">Single</option>
+            <option value="married">Married</option>
+            <option value="divorced">Divorced</option>
+            <option value="widowed">Widowed</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Occupation</label>
+          <input class="auth-input" placeholder="Your occupation" id="basicOccupation">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Education Level</label>
+          <select class="auth-input" id="basicEducation" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select level</option>
+            <option value="school">School</option>
+            <option value="college">College</option>
+            <option value="bachelors">Bachelor's</option>
+            <option value="masters">Master's</option>
+            <option value="phd">PhD</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Nationality</label>
+          <input class="auth-input" placeholder="Your nationality" id="basicNationality">
+        </div>
+      </div>
+
+      <div class="skip-option" onclick="skipStep(2)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 3: Contact Details -->
+    <div id="step3" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Contact Details</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">How can we reach you?</p>
+
+      <div class="form-group">
+        <label class="form-label">Mobile Number</label>
+        <input class="auth-input" placeholder="+1 (555) 000-0000" id="contactMobile">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Alternate Mobile Number</label>
+        <input class="auth-input" placeholder="+1 (555) 000-0000" id="contactAltMobile">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address *</label>
+        <input class="auth-input" placeholder="email@example.com" id="contactEmail" type="email">
+      </div>
+
+      <div style="border-top:1px solid var(--border);margin:20px 0;padding-top:20px">
+        <p style="font-weight:500;margin-bottom:15px;color:var(--cyan)">Emergency Contact</p>
+
+        <div class="form-group">
+          <label class="form-label">Emergency Contact Person</label>
+          <input class="auth-input" placeholder="Contact person name" id="contactEmergencyPerson">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Emergency Contact Number</label>
+          <input class="auth-input" placeholder="+1 (555) 000-0000" id="contactEmergencyPhone">
+        </div>
+      </div>
+
+      <div class="skip-option" onclick="skipStep(3)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 4: Address Details -->
+    <div id="step4" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Address Details</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Where do you live?</p>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Country</label>
+          <input class="auth-input" placeholder="Country" id="addressCountry">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">State</label>
+          <input class="auth-input" placeholder="State" id="addressState">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">District</label>
+          <input class="auth-input" placeholder="District" id="addressDistrict">
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">City</label>
+          <input class="auth-input" placeholder="City" id="addressCity">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Postal Code</label>
+        <input class="auth-input" placeholder="123456" id="addressPostal">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Full Address</label>
+        <textarea class="auth-input" rows="3" placeholder="Street address..." id="addressFull" style="resize:vertical"></textarea>
+      </div>
+
+      <div class="skip-option" onclick="skipStep(4)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 5: Government ID -->
+    <div id="step5" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Government Identity</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Verify your identity (optional for demo)</p>
+
+      <div class="form-group">
+        <label class="form-label">Aadhaar Number</label>
+        <input class="auth-input" placeholder="XXXX XXXX XXXX XXXX" id="govAadhaar">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Passport Number</label>
+        <input class="auth-input" placeholder="A1234567" id="govPassport">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Driving License Number</label>
+        <input class="auth-input" placeholder="DL-123456789012" id="govDriving">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">National ID</label>
+        <input class="auth-input" placeholder="National ID number" id="govNational">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Other Government ID</label>
+        <input class="auth-input" placeholder="Other ID details" id="govOther">
+      </div>
+
+      <div class="file-upload" onclick="document.getElementById('govFileInput').click()">
+        <div class="file-upload-icon">📄</div>
+        <div class="file-upload-text">Upload ID Document</div>
+        <div class="file-upload-hint">PDF, PNG, JPG · Max 10MB</div>
+        <input type="file" id="govFileInput" style="display:none" accept=".pdf,.png,.jpg,.jpeg">
+      </div>
+
+      <div class="skip-option" onclick="skipStep(5)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 6: Medical History -->
+    <div id="step6" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Medical History</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Help us understand your health background</p>
+
+      <div class="checkbox-grid">
+        <label class="checkbox-card">
+          <input type="checkbox" id="medDiabetes">
+          <span class="checkbox-label">Diabetes</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medHypertension">
+          <span class="checkbox-label">Hypertension</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medThyroid">
+          <span class="checkbox-label">Thyroid Disorders</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medCardiac">
+          <span class="checkbox-label">Cardiac Conditions</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medNeurological">
+          <span class="checkbox-label">Neurological Conditions</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medPsychiatric">
+          <span class="checkbox-label">Psychiatric Conditions</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medSleep">
+          <span class="checkbox-label">Sleep Disorders</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="medMentalHealth">
+          <span class="checkbox-label">Previous Mental Health Diagnoses</span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:15px">
+        <label class="form-label">Current Medications</label>
+        <textarea class="auth-input" rows="2" placeholder="List any medications you're currently taking..." id="medications" style="resize:vertical"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Other Medical Conditions</label>
+        <textarea class="auth-input" rows="2" placeholder="Any other conditions..." id="medOther" style="resize:vertical"></textarea>
+      </div>
+
+      <div class="skip-option" onclick="skipStep(6)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 7: Lifestyle Assessment -->
+    <div id="step7" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Lifestyle Assessment</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Tell us about your daily habits</p>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Smoking Status</label>
+          <select class="auth-input" id="lifeSmoking" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select</option>
+            <option value="never">Never</option>
+            <option value="former">Former Smoker</option>
+            <option value="current">Current Smoker</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Alcohol Consumption</label>
+          <select class="auth-input" id="lifeAlcohol" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select</option>
+            <option value="never">Never</option>
+            <option value="occasional">Occasional</option>
+            <option value="moderate">Moderate</option>
+            <option value="heavy">Heavy</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Recreational Drug Use</label>
+          <select class="auth-input" id="lifeDrugs" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select</option>
+            <option value="never">Never</option>
+            <option value="former">Former User</option>
+            <option value="current">Current User</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Physical Activity Level</label>
+          <select class="auth-input" id="lifeActivity" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select</option>
+            <option value="sedentary">Sedentary</option>
+            <option value="light">Light</option>
+            <option value="moderate">Moderate</option>
+            <option value="active">Active</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Daily Screen Time</label>
+          <select class="auth-input" id="lifeScreen" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select</option>
+            <option value="<2">&lt; 2 hours</option>
+            <option value="2-4">2-4 hours</option>
+            <option value="4-6">4-6 hours</option>
+            <option value="6+">6+ hours</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Sleep Duration</label>
+          <select class="auth-input" id="lifeSleep" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+            <option value="">Select</option>
+            <option value="<5">&lt; 5 hours</option>
+            <option value="5-6">5-6 hours</option>
+            <option value="6-7">6-7 hours</option>
+            <option value="7-8">7-8 hours</option>
+            <option value="8+">8+ hours</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Sleep Quality</label>
+        <select class="auth-input" id="lifeSleepQuality" style="background:rgba(255,255,255,.08);color:#e2e8f0">
+          <option value="">Select</option>
+          <option value="poor">Poor</option>
+          <option value="fair">Fair</option>
+          <option value="good">Good</option>
+          <option value="excellent">Excellent</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Additional Lifestyle Notes</label>
+        <textarea class="auth-input" rows="2" placeholder="Any other lifestyle factors..." id="lifeNotes" style="resize:vertical"></textarea>
+      </div>
+
+      <div class="skip-option" onclick="skipStep(7)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 8: Family History -->
+    <div id="step8" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Family History</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Your family's medical background</p>
+
+      <div class="checkbox-grid" style="grid-template-columns:1fr 1fr">
+        <label class="checkbox-card">
+          <input type="checkbox" id="famMentalHealth">
+          <span class="checkbox-label">Mental Health History</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="famNeurological">
+          <span class="checkbox-label">Neurological Disorders</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="famSubstance">
+          <span class="checkbox-label">Substance Abuse History</span>
+        </label>
+
+        <label class="checkbox-card">
+          <input type="checkbox" id="famGenetic">
+          <span class="checkbox-label">Genetic Disorders</span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:15px">
+        <label class="form-label">Other Family Conditions</label>
+        <textarea class="auth-input" rows="2" placeholder="Any other family conditions..." id="famOther" style="resize:vertical"></textarea>
+      </div>
+
+      <div class="skip-option" onclick="skipStep(8)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 9: Profile Image -->
+    <div id="step9" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Profile Photo</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Add a photo for your patient profile</p>
+
+      <div class="profile-photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+        <div class="profile-photo-preview" id="photoPreview" style="display:none">
+          <img id="photoImg" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+        </div>
+        <div class="profile-photo-placeholder" id="photoPlaceholder">
+          <div style="font-size:3rem;margin-bottom:10px">📷</div>
+          <div style="font-weight:500">Click to upload photo</div>
+          <div style="color:var(--mid);font-size:0.85rem;margin-top:5px">PNG, JPG, JPEG</div>
+        </div>
+        <input type="file" id="photoInput" style="display:none" accept=".png,.jpg,.jpeg">
+      </div>
+
+      <div class="skip-option" onclick="skipStep(9)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 10: Digital Signature -->
+    <div id="step10" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Digital Signature</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Your electronic consent signature</p>
+
+      <div class="signature-area" id="signatureArea" onclick="document.getElementById('signatureInput').click()">
+        <div class="signature-preview" id="signaturePreview" style="display:none">
+          <img id="signatureImg" style="width:100%;height:100%;object-fit:contain">
+        </div>
+        <div class="signature-placeholder" id="signaturePlaceholder">
+          <div style="font-size:2.5rem;margin-bottom:10px">✍️</div>
+          <div style="font-weight:500">Click to upload signature</div>
+          <div style="color:var(--mid);font-size:0.85rem;margin-top:5px">PNG, PDF</div>
+        </div>
+        <input type="file" id="signatureInput" style="display:none" accept=".png,.pdf">
+      </div>
+
+      <div class="skip-option" onclick="skipStep(10)">Skip for Demo Mode →</div>
+    </div>
+
+    <!-- Step 11: Consent & Privacy -->
+    <div id="step11" class="step-content" style="display:none">
+      <h2 style="font-family:var(--disp);font-size:1.6rem;margin-bottom:8px">Consent & Privacy</h2>
+      <p style="color:var(--mid);margin:0 0 20px;font-size:0.9rem">Please review and accept the following</p>
+
+      <div class="consent-scroll">
+        <div class="consent-card">
+          <label class="consent-check">
+            <input type="checkbox" id="consentPrivacy">
+            <span class="check-mark">✓</span>
+          </label>
+          <div class="consent-content">
+            <div class="consent-title">Privacy Policy</div>
+            <div class="consent-text">I have read and understood the BODH-I Privacy Policy. I consent to the collection, use, and storage of my personal and health information as described therein.</div>
+          </div>
+        </div>
+
+        <div class="consent-card">
+          <label class="consent-check">
+            <input type="checkbox" id="consentResearch">
+            <span class="check-mark">✓</span>
+          </label>
+          <div class="consent-content">
+            <div class="consent-title">Research Consent</div>
+            <div class="consent-text">I consent to my anonymized data being used for mental health research purposes. I understand I can withdraw at any time.</div>
+          </div>
+        </div>
+
+        <div class="consent-card">
+          <label class="consent-check">
+            <input type="checkbox" id="consentData">
+            <span class="check-mark">✓</span>
+          </label>
+          <div class="consent-content">
+            <div class="consent-title">Data Usage Consent</div>
+            <div class="consent-text">I consent to BODH-I analyzing my assessments and health data to provide personalized AI-powered insights and recommendations.</div>
+          </div>
+        </div>
+
+        <div class="consent-card">
+          <label class="consent-check">
+            <input type="checkbox" id="consentAI">
+            <span class="check-mark">✓</span>
+          </label>
+          <div class="consent-content">
+            <div class="consent-title">AI Processing Consent</div>
+            <div class="consent-text">I understand that BODH-I uses AI algorithms to process my data. I consent to AI-assisted analysis of my mental wellness status.</div>
+          </div>
+        </div>
+
+        <div class="consent-card">
+          <label class="consent-check">
+            <input type="checkbox" id="consentHealthcare">
+            <span class="check-mark">✓</span>
+          </label>
+          <div class="consent-content">
+            <div class="consent-title">Healthcare Disclaimer</div>
+            <div class="consent-text">I understand that BODH-I is a wellness platform and not a substitute for professional medical care. I will consult healthcare professionals for medical advice.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success View -->
+    <div id="successView" class="step-content" style="display:none">
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:4rem;margin-bottom:20px">🎉</div>
+        <h2 style="font-family:var(--disp);font-size:1.8rem;margin-bottom:10px">Welcome to BODH-I</h2>
+        <p style="color:var(--mid);margin:0 0 25px">Your account has been successfully created.</p>
+
+        <div class="bodhi-id-display">
+          <div style="color:var(--mid);font-size:0.8rem;margin-bottom:5px">Your Patient ID</div>
+          <div style="font-family:var(--mono);font-size:1.4rem;color:var(--cyan)" id="generatedBodhiId">BODHI-2026-845912</div>
+        </div>
+
+        <div class="success-checklist">
+          <div class="success-item">
+            <span class="success-icon">✓</span>
+            <span>Account Created</span>
+          </div>
+          <div class="success-item">
+            <span class="success-icon">✓</span>
+            <span>Patient Registered</span>
+          </div>
+          <div class="success-item">
+            <span class="success-icon">✓</span>
+            <span>Healthcare Profile Initialized</span>
+          </div>
+          <div class="success-item">
+            <span class="success-icon">✓</span>
+            <span>AI Wellness Journey Ready</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%;margin-top:15px" onclick="goToApp()">
+          Begin Assessment →
+        </button>
+        <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="showAuthTab('login')">
+          Go to Login →
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="step-nav" id="stepNav" style="display:none;">
+      <button class="btn-ghost" id="prevBtn" onclick="prevStep()" style="display:none">← Back</button>
+      <button class="btn-primary" id="nextBtn" onclick="nextStep()">Continue →</button>
+    </div>
+
+  </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// AUTH STATE
+let currentStep = 1;
+const totalSteps = 11;
+let selectedAccountType = '';
+
+// DOM LOAD
+document.addEventListener('DOMContentLoaded', function() {
+  var cards = document.querySelectorAll('.account-type-card');
+  if(cards[0]) cards[0].setAttribute('data-type', 'patient');
+  if(cards[1]) cards[1].setAttribute('data-type', 'research');
+  if(cards[2]) cards[2].setAttribute('data-type', 'professional');
+  updateProgress();
+  updateStepIndicator();
+  initBgCanvas();
+});
+
+function selectAccountType(type) {
+  selectedAccountType = type;
+  document.querySelectorAll('.account-type-card').forEach(function(c) { c.classList.remove('selected'); });
+  var allCards = document.querySelectorAll('.account-type-card');
+  for(var i = 0; i < allCards.length; i++) {
+    var card = allCards[i];
+    if((type === 'patient' && i === 0) || (type === 'research' && i === 1) || (type === 'professional' && i === 2)) {
+      card.classList.add('selected');
+    }
+  }
+}
+
+function showLanding(){
+  currentStep = 0;
+  updateProgress();
+
+  document.getElementById('landingView').style.display = 'block';
+  document.getElementById('loginForm').style.display = 'none';
+
+  for(let i=1;i<=11;i++)
+    document.getElementById('step'+i).style.display = 'none';
+
+  document.getElementById('successView').style.display = 'none';
+  document.getElementById('stepNav').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('prevBtn').style.display = 'none';
+
+  updateStepIndicator();
+}
+
+function showAuthTab(tab){
+  currentStep = 0;
+  updateProgress();
+  if(tab === 'login'){
+    document.getElementById('landingView').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    for(let i=1;i<=11;i++) document.getElementById('step'+i).style.display = 'none';
+    document.getElementById('successView').style.display = 'none';
+    document.getElementById('stepNav').style.display = 'none';
+    document.getElementById('progressWrap').style.display = 'none';
+  } else if(tab === 'signup'){
+    document.getElementById('landingView').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('step1').style.display = 'block';
+    currentStep = 1;
+    for(let i=2;i<=11;i++) document.getElementById('step'+i).style.display = 'none';
+    document.getElementById('successView').style.display = 'none';
+    document.getElementById('stepNav').style.display = 'flex';
+    document.getElementById('prevBtn').style.display = 'none';
+    document.getElementById('nextBtn').textContent = 'Continue ->';
+    document.getElementById('nextBtn').style.display = 'block';
+    document.getElementById('progressWrap').style.display = 'block';
+  }
+  updateStepIndicator();
+}
+
+function updateProgress(){
+  if(currentStep < 1){
+    document.getElementById('progressBar').style.width = '0%';
+  } else {
+    document.getElementById('progressBar').style.width = ((currentStep-1)/(totalSteps-1)*100) + '%';
+  }
+}
+
+function updateStepIndicator(){
+  document.querySelectorAll('.step-dot-3d').forEach(function(dot,index){
+    dot.classList.toggle('active', index + 1 <= currentStep);
+  });
+}
+
+function nextStep(){
+  if(currentStep === 1 && !selectedAccountType){
+    alert('Please select an account type'); return;
+  }
+  if(currentStep >= totalSteps){
+    handleSignup();
+    return;
+  }
+  currentStep++;
+  showStep(currentStep);
+}
+
+function prevStep(){
+  if(currentStep <= 1){
+    showLanding();
+    document.getElementById('stepNav').style.display = 'none';
+    return;
+  }
+  currentStep--;
+  showStep(currentStep);
+}
+
+function skipStep(step){
+  currentStep++;
+  showStep(currentStep);
+}
+
+function showStep(step){
+
+  document.getElementById('stepNav').style.display = 'flex';
+
+  document.querySelectorAll('.step-content').forEach(function(s){
+    s.style.display = 'none';
+  });
+
+  document.getElementById('step'+step).style.display = 'block';
+
+  updateProgress();
+  updateStepIndicator();
+
+  document.getElementById('prevBtn').style.display =
+    step > 1 ? 'block' : 'none';
+
+  document.getElementById('nextBtn').style.display = 'block';
+
+  document.getElementById('nextBtn').textContent =
+    step === 11 ? 'Create Account' : 'Continue →';
+}
+
+function handleSignup(){
+  const consents = ['consentPrivacy','consentResearch','consentData','consentAI','consentHealthcare'];
+  for(let id of consents){
+    if(!document.getElementById(id).checked){
+      alert('Please accept all consents to continue'); return;
+    }
+  }
+  const bodhiId = 'BODHI-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random()*900000);
+  localStorage.setItem("bodhi_isLoggedIn", "true");
+  localStorage.setItem("bodhi_id", bodhiId);
+  localStorage.setItem("bodhi_name", document.getElementById('basicName')?.value || 'User');
+  localStorage.setItem("account_type", selectedAccountType || 'patient');
+  document.querySelectorAll('.step-content').forEach(function(s){ s.style.display = 'none'; });
+  document.getElementById('successView').style.display = 'block';
+  document.getElementById('generatedBodhiId').textContent = bodhiId;
+  document.getElementById('stepNav').style.display = 'none';
+  document.getElementById('progressWrap').style.display = 'none';
+  updateProgress();
+  updateStepIndicator();
+}
+
+function handleLogin(){
+  const bodhiId = document.getElementById('loginBodhiId').value;
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  if(!bodhiId || !email || !password){
+    alert('Please fill in all fields'); return;
+  }
+  localStorage.setItem("bodhi_isLoggedIn", "true");
+  localStorage.setItem("bodhi_id", bodhiId);
+  localStorage.setItem("bodhi_name", email.split('@')[0] || 'User');
+  goToApp();
+}
+
+function showPostLogin(){
+  document.querySelectorAll('.step-content').forEach(function(s){ s.style.display = 'none'; });
+  document.getElementById('postLoginView').style.display = 'block';
+  document.getElementById('stepNav').style.display = 'none';
+}
+
+function goToApp(){
+  window.location.href = 'index.html#assessments';
+}
+
+// 3D BACKGROUND CANVAS
+function initBgCanvas(){
+  const canvas = document.getElementById('bgCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w, h;
+  const particles = [];
+  const PARTICLE_COUNT = 60;
+
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Particle{
+    constructor(){
+      this.reset();
+    }
+    reset(){
+      this.x = Math.random()*w;
+      this.y = Math.random()*h;
+      this.vx = (Math.random()-.5)*.3;
+      this.vy = (Math.random()-.5)*.3;
+      this.size = Math.random()*2 + 1;
+      this.alpha = Math.random()*.5 + .1;
+      this.hue = Math.random() > .5 ? 190 : 260;
+    }
+    update(){
+      this.x += this.vx;
+      this.y += this.vy;
+      if(this.x < 0 || this.x > w) this.vx *= -1;
+      if(this.y < 0 || this.y > h) this.vy *= -1;
+    }
+    draw(){
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+      ctx.fillStyle = 'hsla('+this.hue+',80%,60%,'+this.alpha+')';
+      ctx.fill();
+    }
+  }
+
+  for(let i=0;i<PARTICLE_COUNT;i++) particles.push(new Particle());
+
+  function drawConnections(){
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < 150){
+          const alpha = (1 - dist/150) * .12;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = 'hsla(190,80%,60%,'+alpha+')';
+          ctx.lineWidth = .5;
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate(){
+    ctx.clearRect(0,0,w,h);
+    particles.forEach(function(p){ p.update(); p.draw(); });
+    drawConnections();
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+</script>
+
+</body>
+</html>
