@@ -907,6 +907,53 @@ body{
 #nextBtn{
   flex:1 !important;
 }
+
+/* ══════════════════════════════════════════════
+   COMPREHENSIVE MOBILE RESPONSIVENESS
+   ══════════════════════════════════════════════ */
+@media(max-width:680px){
+  .auth-page{padding:24px 16px}
+  .auth-card-3d{padding:24px 18px 20px;border-radius:20px}
+  .auth-input-3d{min-height:48px;font-size:16px;padding:14px 16px}
+  .btn-3d-primary,.btn-3d-ghost{min-height:52px;font-size:16px;padding:16px 28px}
+  .checkbox-grid{grid-template-columns:1fr}
+  .account-type-grid{grid-template-columns:1fr}
+  .account-type-card{padding:16px}
+  .account-type-icon{font-size:1.8rem}
+  .profile-photo-area{width:120px;height:120px}
+  .signature-area{height:120px}
+  .consent-card{padding:12px}
+  .consent-check{min-width:28px;min-height:28px}
+  .mood-btn{padding:10px 14px}
+  .form-row{flex-direction:column;gap:0}
+  .landing-hero h2{font-size:1.6rem}
+  .landing-hero p{font-size:.95rem;margin-bottom:24px}
+  .step-indicator-3d{gap:3px}
+  .step-dot-3d{width:28px;height:28px;font-size:.68rem}
+  .file-upload{padding:20px}
+  .auth-topbar{max-width:100%;margin-bottom:16px}
+  .auth-logo{font-size:18px}
+  .auth-back{font-size:12px}
+}
+@media(max-width:400px){
+  .auth-page{padding:16px 12px}
+  .auth-card-3d{padding:20px 14px 18px;border-radius:16px}
+  .auth-input-3d{padding:12px 14px;font-size:16px}
+  .btn-3d-primary,.btn-3d-ghost{padding:14px 20px;font-size:15px}
+  .step-dot-3d{width:24px;height:24px;font-size:.6rem}
+  .account-type-icon{font-size:1.5rem}
+  .account-type-title{font-size:.9rem}
+  .landing-hero h2{font-size:1.35rem}
+  .profile-photo-area{width:100px;height:100px}
+  .signature-area{height:100px}
+}
+/* Touch-friendly defaults */
+button,a,input,select,textarea,.checkbox-card,.account-type-card,.consent-check,.mood-btn,.skip-option,.file-upload,.profile-photo-area,.signature-area{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(6,182,212,.15);
+}
+/* Prevent iOS text zoom */
+input,select,textarea{font-size:16px}
 </style>
 </head>
 <body>
